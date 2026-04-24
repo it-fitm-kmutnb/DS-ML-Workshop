@@ -9,3 +9,6 @@ st.write("##### Module 1: การจัดการข้อมูลพื้
 
 if st.button("💰 ระบบคำนวณส่วนลดตามยอดซื้อ"):
     st.switch_page("pages/app1_discount_calc.py")
+
+if st.button("🛑 ระบบจำลอง Early Stopping"):
+    st.switch_page("pages/auto_stop_training.py")
