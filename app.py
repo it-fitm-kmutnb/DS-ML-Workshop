@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title="My Multi-page App", layout="wide")
+st.set_page_config(page_title="MyApp", layout="wide")
 
 st.title("🏠 หน้าหลัก")
 st.write("### Boot Camp: Data Science and Machine Learning")
