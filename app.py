@@ -10,3 +10,7 @@ st.write("##### Module 1: การจัดการข้อมูลพื้
 if st.button("💰 ระบบคำนวณส่วนลดตามยอดซื้อ"):
     st.switch_page("pages/app1_discount_calc.py")
 
+st.write("##### Module 2: การควบคุมการไหลของข้อมูล ฟังก์ชัน และเครื่องมือ")
+
+if st.button("⚡ ระบบวิเคราะห์ต้นทุนการผลิตและคำนวณภาษีความหวานสำหรับเครื่องดื่มชูกำลัง"):
+    st.switch_page("pages/app1_discount_calc.py")
