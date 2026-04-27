@@ -72,3 +72,8 @@ try:
 
 except FileNotFoundError:
     st.error("❌ ไม่พบไฟล์ energy_formulas.json กรุณาตรวจสอบตำแหน่งไฟล์")
+
+
+if st.button("🏠 กลับหน้าหลัก"):
+    st.switch_page("app.py")
+
