@@ -89,8 +89,8 @@ order_list = order_list.sort_values(by='Product_Name')
 st.dataframe(order_list[['SKU_ID', 'Product_Name', 'Region', 'Current_Stock', 'Min_Requirement', 'Inventory_Value']])
 st.write(f"สรุป: มีสินค้าที่ต้องสั่งซื้อเพิ่มทั้งหมด {len(order_list)} รายการ")
 
-# --- สถานะสุขภาพของสต็อก ---
-st.header('สถานะสุขภาพของสต็อก')
+# --- สถานะของสต็อก ---
+st.header('สถานะของสต็อก')
 fig2, ax2 = plt.subplots(figsize=(8, 5))
 status_counts = df_cleaned['Order_Signal'].value_counts()
 colors = ['#2ecc71' if (x == 'STOCK OK') else '#e74c3c' for x in status_counts.index]
