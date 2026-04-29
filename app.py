@@ -14,3 +14,8 @@ st.write("##### Module 2: การควบคุมการไหลของ
 
 if st.button("⚡ ระบบวิเคราะห์ต้นทุนการผลิตและคำนวณภาษีความหวานสำหรับเครื่องดื่มชูกำลัง"):
     st.switch_page("pages/energy_drink_analyzer.py")
+
+st.write("##### Module 3: Data Wrangling ด้วย Python")
+
+if st.button("📊 แอปพลิเคชันวิเคราะห์ข้อมูลคลังสินค้า"):
+    st.switch_page("pages/energy_inventory.py")
