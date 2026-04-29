@@ -100,3 +100,7 @@ ax2.set_xlabel('Status', fontsize=12)
 ax2.set_ylabel('Number of SKUs', fontsize=12)
 ax2.set_xticks(range(len(status_counts.index)), status_counts.index, rotation=0)
 st.pyplot(fig2)
+
+
+if st.button("🏠 กลับหน้าหลัก"):
+    st.switch_page("app.py")
