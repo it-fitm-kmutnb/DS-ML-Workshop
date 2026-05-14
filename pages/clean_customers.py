@@ -78,7 +78,7 @@ if uploaded_file is not None:
             else:
                 st.info("💡 กดปุ่ม 'Clean Data Now' เพื่อดูข้อมูลที่จัดการแล้ว")
 
-    # -----------------------------------------
+# -----------------------------------------
     # Visualization Section
     # -----------------------------------------
     with tab2:
@@ -86,10 +86,11 @@ if uploaded_file is not None:
             cdf = st.session_state['cleaned_df']
             st.subheader("📈 Insights from Cleaned Data")
             
+            # แถวที่ 1: Histogram และ Bar Chart
             v_col1, v_col2 = st.columns(2)
             
             with v_col1:
-                st.write(f"**Histogram: การกระจายตัวของอายุ ({age_col})**")
+                st.write(f"**1. Histogram: การกระจายตัวของอายุ ({age_col})**")
                 fig, ax = plt.subplots()
                 cdf[age_col].plot(kind='hist', bins=10, color='teal', edgecolor='white', ax=ax)
                 ax.set_xlabel("Age")
@@ -97,15 +98,35 @@ if uploaded_file is not None:
                 st.pyplot(fig)
                 
             with v_col2:
-                st.write("**Pie Chart: สัดส่วนกลุ่มอายุ**")
-                fig2, ax2 = plt.subplots()
+                st.write("**2. Bar Chart: จำนวนลูกค้าแยกตามช่วงอายุ**")
+                fig3, ax3 = plt.subplots()
                 age_counts = cdf['Age_Group'].value_counts().sort_index()
                 if not age_counts.empty:
-                    age_counts.plot(kind='pie', autopct='%1.1f%%', startangle=140, ax=ax2, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99','#c2c2f0'])
+                    age_counts.plot(kind='bar', color='skyblue', edgecolor='navy', ax=ax3)
+                    ax3.set_xlabel("Age Group")
+                    ax3.set_ylabel("Number of Customers")
+                    plt.xticks(rotation=45) # เอียงตัวอักษรให้อ่านง่ายขึ้น
+                    st.pyplot(fig3)
+                else:
+                    st.write("ไม่มีข้อมูลเพียงพอสำหรับสร้างกราฟแท่ง")
+
+            st.divider()
+
+            # แถวที่ 2: Pie Chart และตารางสรุป
+            v_col3, v_col4 = st.columns(2)
+
+            with v_col3:
+                st.write("**3. Pie Chart: สัดส่วนกลุ่มอายุ**")
+                fig2, ax2 = plt.subplots()
+                if not age_counts.empty:
+                    age_counts.plot(kind='pie', autopct='%1.1f%%', startangle=140, ax=ax2, 
+                                   colors=['#ff9999','#66b3ff','#99ff99','#ffcc99','#c2c2f0'])
                     ax2.set_ylabel("")
                     st.pyplot(fig2)
-                else:
-                    st.write("ไม่มีข้อมูลเพียงพอสำหรับสร้างกราฟวงกลม")
+
+            with v_col4:
+                st.write("**📊 ตารางสรุปจำนวนรายกลุ่มอายุ**")
+                st.table(age_counts)
 
             # ปุ่มดาวน์โหลด
             st.divider()
