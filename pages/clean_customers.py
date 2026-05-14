@@ -1,105 +1,111 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
 
-# ตั้งค่าหน้าเว็บ
-st.set_page_config(page_title="Customer Data Cleaner", layout="wide")
+# 1. ตั้งค่าหน้าเว็บ
+st.set_page_config(page_title="Customer Data Cleaning & Analytics Dashboard", layout="wide")
 
-st.title("📂 Customer Data Cleaner")
-st.write("อัปโหลดไฟล์ CSV ของคุณเพื่อทำความสะอาดและวิเคราะห์ข้อมูล")
+st.title("🧼 Customer Data Cleaning & Analytics Dashboard")
+st.write("อัปโหลดไฟล์ CSV เพื่อทำความสะอาดข้อมูลและดูสรุปผลสถิติแบบกราฟ")
 
-# 1. ส่วนการอัปโหลดไฟล์ (File Uploader)
-uploaded_file = st.file_uploader("เลือกไฟล์ CSV ที่ต้องการ", type=["csv"])
-
-if uploaded_file is not None:
-    # อ่านข้อมูลจากไฟล์ที่อัปโหลด
-    df = pd.read_csv(uploaded_file)
+# 2. ฟังก์ชันสำหรับทำความสะอาดข้อมูล
+def clean_data(df, name_col, age_col, phone_col):
+    df_cleaned = df.copy()
     
-    st.success("โหลดไฟล์สำเร็จ!")
+    # จัดการค่าว่าง
+    df_cleaned[name_col] = df_cleaned[name_col].fillna('unknown')
+    df_cleaned = df_cleaned.dropna(subset=[phone_col])
     
-    # -----------------------------------------
-    # Sidebar: การตั้งค่าการ Clean ข้อมูล
-    # -----------------------------------------
-    st.sidebar.header("Data Cleaning Options")
+    # ล้างข้อมูลชื่อ
+    df_cleaned['Name_Cleaned'] = df_cleaned[name_col].astype(str).str.strip().str.lower()
+    df_cleaned.loc[df_cleaned['Name_Cleaned'] == '', 'Name_Cleaned'] = 'unknown'
     
-    # ตรวจสอบคอลัมน์ที่มีในไฟล์
-    all_columns = df.columns.tolist()
+    # ล้างเบอร์โทรศัพท์ (Regex)
+    df_cleaned['Phone_Numeric'] = df_cleaned[phone_col].astype(str).str.replace(r'[-.\s]', '', regex=True)
     
-    # ให้ผู้ใช้เลือกคอลัมน์ที่จะจัดการ (เพื่อความยืดหยุ่น)
-    name_col = st.sidebar.selectbox("เลือกคอลัมน์ 'ชื่อ':", all_columns, index=all_columns.index('Name') if 'Name' in all_columns else 0)
-    age_col = st.sidebar.selectbox("เลือกคอลัมน์ 'อายุ':", all_columns, index=all_columns.index('Age') if 'Age' in all_columns else 0)
-    phone_col = st.sidebar.selectbox("เลือกคอลัมน์ 'เบอร์โทรศัพท์':", all_columns, index=all_columns.index('Phone') if 'Phone' in all_columns else 0)
+    # ลบข้อมูลซ้ำ
+    df_cleaned = df_cleaned.drop_duplicates(subset=['Phone_Numeric']).reset_index(drop=True)
+    
+    # สร้างกลุ่มช่วงอายุ (สำหรับ Pie Chart)
+    bins = [0, 20, 30, 40, 50, 100]
+    labels = ['Under 20', '21-30', '31-40', '41-50', 'Over 50']
+    df_cleaned['Age_Group'] = pd.cut(df_cleaned[age_col], bins=bins, labels=labels)
+    
+    return df_cleaned
 
-    if st.sidebar.button("✨ Clean Data Now"):
-        # กระบวนการ Cleaning (ปรับตามชื่อคอลัมน์ที่ผู้ใช้เลือก)
-        df[name_col] = df[name_col].fillna('unknown')
-        df = df.dropna(subset=[phone_col])
+# 3. ส่วนการอัปโหลดไฟล์
+uploaded_file = st.file_uploader("เลือกไฟล์ CSV ของคุณ", type=["csv"])
+
+if uploaded_file:
+    raw_df = pd.read_csv(uploaded_file)
+    
+    # ส่วน Sidebar สำหรับเลือกคอลัมน์
+    st.sidebar.header("⚙️ Settings")
+    cols = raw_df.columns.tolist()
+    name_c = st.sidebar.selectbox("เลือกคอลัมน์ Name", cols, index=cols.index('Name') if 'Name' in cols else 0)
+    age_c = st.sidebar.selectbox("เลือกคอลัมน์ Age", cols, index=cols.index('Age') if 'Age' in cols else 0)
+    phone_c = st.sidebar.selectbox("เลือกคอลัมน์ Phone", cols, index=cols.index('Phone') if 'Phone' in cols else 0)
+
+    # ปุ่มสำหรับเริ่มทำความสะอาด
+    if st.sidebar.button("✨ Start Cleaning"):
+        st.session_state['cleaned_df'] = clean_data(raw_df, name_c, age_c, phone_c)
+        st.sidebar.success("Cleaning Completed!")
+
+    # --- ส่วนการแสดงผล ---
+    tab1, tab2, tab3 = st.tabs(["📊 Data Preview", "📈 Age Analysis", "🥧 Proportions"])
+
+    with tab1:
+        col_raw, col_clean = st.columns(2)
+        with col_raw:
+            st.subheader("Raw Data (Before)")
+            st.dataframe(raw_df, use_container_width=True)
         
-        # Clean ชื่อ
-        df['Name_Cleaned'] = df[name_col].astype(str).str.strip().str.lower()
-        
-        # Clean เบอร์โทรด้วย Regex
-        df['Phone_Numeric'] = df[phone_col].astype(str).str.replace(r'[-.\s]', '', regex=True)
-        
-        # ลบข้อมูลซ้ำ
-        before_count = len(df)
-        df = df.drop_duplicates(subset=['Phone_Numeric']).reset_index(drop=True)
-        after_count = len(df)
-        
-        st.sidebar.info(f"ลบข้อมูลซ้ำออกไป {before_count - after_count} แถว")
+        with col_clean:
+            st.subheader("Cleaned Data (After)")
+            if 'cleaned_df' in st.session_state:
+                st.dataframe(st.session_state['cleaned_df'], use_container_width=True)
+            else:
+                st.warning("กรุณากดปุ่ม 'Start Cleaning' เพื่อดูข้อมูลหลัง Clean")
 
-    # -----------------------------------------
-    # Main Content: แสดงผลข้อมูล
-    # -----------------------------------------
-    col1, col2 = st.columns([2, 1])
+    with tab2:
+        st.subheader("📊 Age Distribution (Histogram)")
+        if 'cleaned_df' in st.session_state:
+            target_df = st.session_state['cleaned_df']
+            
+            fig, ax = plt.subplots(figsize=(10, 5))
+            target_df[age_c].plot(kind='hist', bins=10, color='skyblue', edgecolor='black', ax=ax)
+            ax.set_title("Distribution of Customer Age")
+            ax.set_xlabel("Age")
+            ax.set_ylabel("Frequency")
+            st.pyplot(fig)
+        else:
+            st.info("รอข้อมูลที่ทำความสะอาดแล้วเพื่อแสดงผล Histogram")
 
-    with col1:
-        st.subheader("📋 Preview Data")
-        st.dataframe(df, use_container_width=True)
-
-    with col2:
-        st.subheader("📊 Basic Stats")
-        st.write(df.describe())
-
-    st.divider()
-
-    # -----------------------------------------
-    # Visualization Section
-    # -----------------------------------------
-    st.subheader("📈 Visualization")
-    
-    v_col1, v_col2 = st.columns(2)
-    
-    with v_col1:
-        st.write(f"การกระจายตัวของคอลัมน์: {age_col}")
-        fig, ax = plt.subplots()
-        df[age_col].plot(kind='hist', bins=10, color='teal', edgecolor='white', ax=ax)
-        st.pyplot(fig)
-        
-    with v_col2:
-        if 'Name_Cleaned' in df.columns:
-            st.write("Top 5 Customers (by frequency)")
-            fig2, ax2 = plt.subplots()
-            df['Name_Cleaned'].value_counts().head(5).plot(kind='pie', autopct='%1.1f%%', ax=ax2)
+    with tab3:
+        st.subheader("🥧 Age Group Proportions (Pie Chart)")
+        if 'cleaned_df' in st.session_state:
+            target_df = st.session_state['cleaned_df']
+            
+            # เตรียมนับจำนวนกลุ่มอายุ
+            age_counts = target_df['Age_Group'].value_counts().sort_index()
+            
+            fig2, ax2 = plt.subplots(figsize=(8, 8))
+            age_counts.plot(kind='pie', autopct='%1.1f%%', startangle=140, 
+                           colors=['#ff9999','#66b3ff','#99ff99','#ffcc99','#c2c2f0'], ax=ax2)
+            ax2.set_ylabel("") # ลบชื่อแกน Y
             st.pyplot(fig2)
+            
+            # แสดงตารางสรุปเล็กๆ
+            st.table(age_counts)
+        else:
+            st.info("รอข้อมูลที่ทำความสะอาดแล้วเพื่อแสดงผล Pie Chart")
 
     # ปุ่มดาวน์โหลด
-    st.divider()
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Download Processed CSV",
-        data=csv,
-        file_name='processed_data.csv',
-        mime='text/csv',
-    )
+    if 'cleaned_df' in st.session_state:
+        st.divider()
+        csv = st.session_state['cleaned_df'].to_csv(index=False).encode('utf-8')
+        st.download_button("📥 Download Cleaned CSV", data=csv, file_name="cleaned_data.csv", mime="text/csv")
 
 else:
-    st.info("👆 กรุณาอัปโหลดไฟล์ CSV เพื่อเริ่มต้นใช้งาน")
-    # แสดงตัวอย่างหน้าตาไฟล์ที่ควรจะเป็น
-    st.write("ตัวอย่างโครงสร้างไฟล์ที่แนะนำ:")
-    st.code("Name,Age,Phone\nJohn Doe,30,081-234-5678")
-
-
-if st.button("🏠 กลับหน้าหลัก"):
-    st.switch_page("app.py")
+    st.info("👋 กรุณาอัปโหลดไฟล์ CSV เพื่อเริ่มต้นการวิเคราะห์")
