@@ -71,21 +71,49 @@ if uploaded_file is not None:
 
     with tab1:
         col_a, col_b = st.columns(2)
+        
+        # --- ฝั่งข้อมูลดิบ (Raw Data) ---
         with col_a:
             st.subheader("🔍 ข้อมูลดิบ (Raw Data)")
-            buffer = StringIO()
-            df.info(buf=buffer)
-            st.code(buffer.getvalue())
+            
+            # แสดง .info()
+            st.write("**Data Structure (.info):**")
+            buffer_raw = StringIO()
+            df.info(buf=buffer_raw)
+            st.code(buffer_raw.getvalue())
+            
+            # แสดง .describe()
+            st.write("**Statistics (.describe):**")
+            st.dataframe(df.describe(), use_container_width=True)
+            
+            # แสดงตารางข้อมูลตัวอย่าง
+            st.write("**Data Preview (Top 10):**")
             st.dataframe(df.head(10), use_container_width=True)
         
+        # --- ฝั่งข้อมูลที่ Clean แล้ว (Cleaned Data) ---
         with col_b:
             st.subheader("🧼 ข้อมูลที่ Clean แล้ว (Cleaned Data)")
+            
             if 'cleaned_df' in st.session_state:
                 cdf = st.session_state['cleaned_df']
+                
+                # แสดง .info() ของข้อมูลที่ Clean แล้ว
+                st.write("**Cleaned Structure (.info):**")
+                buffer_clean = StringIO()
+                cdf.info(buf=buffer_clean)
+                st.code(buffer_clean.getvalue())
+                
+                # แสดง .describe() ของข้อมูลที่ Clean แล้ว
+                st.write("**Cleaned Statistics (.describe):**")
                 st.dataframe(cdf.describe(), use_container_width=True)
+                
+                # แสดงตารางข้อมูลตัวอย่างที่ Clean แล้ว
+                st.write("**Cleaned Preview (Top 10):**")
                 st.dataframe(cdf.head(10), use_container_width=True)
             else:
-                st.info("💡 กรุณากดปุ่ม 'Clean & Process Data' เพื่อเริ่มประมวลผล")
+                # กรณีที่ยังไม่ได้กดปุ่ม Clean
+                st.info("💡 กรุณากดปุ่ม 'Clean & Process Data' ที่แถบด้านซ้าย เพื่อเปรียบเทียบข้อมูล")
+                st.image("https://cdn-icons-png.flaticon.com/512/2037/2037061.png", width=100) # ตกแต่งเล็กน้อย
 
     with tab2:
         if 'cleaned_df' in st.session_state:
