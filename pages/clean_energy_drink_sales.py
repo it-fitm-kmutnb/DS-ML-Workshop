@@ -103,9 +103,12 @@ if uploaded_file is not None:
                 cdf.info(buf=buffer_clean)
                 st.code(buffer_clean.getvalue())
                 
-                # แสดง .describe() ของข้อมูลที่ Clean แล้ว
-                st.write("**Cleaned Statistics (.describe):**")
-                st.dataframe(cdf.describe(), use_container_width=True)
+                # แสดง .describe() ของข้อมูลที่ Clean แล้ว เฉพาะคอลัมน์ Sales
+                st.write(f"**Cleaned Statistics ({sales_col}):**")
+                
+                # เลือกเฉพาะคอลัมน์ที่เก็บค่า Sales (ใช้ตัวแปร sales_col ที่รับมาจาก Selectbox)
+                # และแปลงเป็น DataFrame เพื่อให้แสดงผลเป็นตารางที่สวยงามบน Streamlit
+                st.dataframe(cdf[[sales_col]].describe(), use_container_width=True)
                 
                 # แสดงตารางข้อมูลตัวอย่างที่ Clean แล้ว
                 st.write("**Cleaned Preview (Top 10):**")
