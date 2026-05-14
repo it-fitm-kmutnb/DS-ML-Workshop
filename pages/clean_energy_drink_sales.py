@@ -34,37 +34,44 @@ if uploaded_file is not None:
     # --- 2. Sidebar: Cleaning Options ---
     st.sidebar.divider()
     st.sidebar.header("🧹 Cleaning Options")
-    all_cols = df.columns.tolist()
     
-    # ให้ผู้ใช้เลือกคอลัมน์ที่ตรงกับข้อมูลจริงในไฟล์
-    date_col = st.sidebar.selectbox("เลือกคอลัมน์ 'วันที่':", all_cols, index=all_cols.index('Date') if 'Date' in all_cols else 0)
-    sales_col = st.sidebar.selectbox("เลือกคอลัมน์ 'ยอดขาย':", all_cols, index=all_cols.index('Sales') if 'Sales' in all_cols else 0)
-    prod_col = st.sidebar.selectbox("เลือกคอลัมน์ 'สินค้า':", all_cols, index=all_cols.index('Product') if 'Product' in all_cols else 0)
-    reg_col = st.sidebar.selectbox("เลือกคอลัมน์ 'ภูมิภาค':", all_cols, index=all_cols.index('Region') if 'Region' in all_cols else 0)
+    # กำหนดชื่อคอลัมน์ที่ต้องการใช้งานโดยตรง
+    date_col = 'Date'
+    sales_col = 'Sales'
+    prod_col = 'Product'
+    reg_col = 'Region'
 
     if st.sidebar.button("✨ Clean & Process Data"):
-        working_df = df.copy()
-        
-        # 3.1 Type Conversion
-        working_df[date_col] = pd.to_datetime(working_df[date_col], errors='coerce')
-        working_df[prod_col] = working_df[prod_col].astype('category')
-        working_df[reg_col] = working_df[reg_col].astype('category')
-        
-        # 3.2 Logic Correction & Imputation (จัดการค่าลบและเติมค่าว่างด้วยค่าเฉลี่ยรายสินค้า)
-        working_df.loc[working_df[sales_col] < 0, sales_col] = np.nan
-        working_df[sales_col] = working_df[sales_col].fillna(
-            working_df.groupby(prod_col, observed=False)[sales_col].transform('mean')
-        )
-        
-        # 3.3 Outlier Handling (ตัดค่าที่ผิดปกติสูงเกินไป)
-        working_df = working_df[working_df[sales_col] <= 1000]
-        
-        # 4. Feature Engineering
-        working_df['DayOfWeek'] = working_df[date_col].dt.day_name()
-        working_df['Is_Above_Target'] = working_df[sales_col] > 150
-        
-        st.session_state['cleaned_df'] = working_df
-        st.sidebar.success("ทำความสะอาดข้อมูลเสร็จแล้ว!")
+        # ตรวจสอบว่าในไฟล์มีคอลัมน์ที่ต้องการครบถ้วนหรือไม่
+        required_cols = [date_col, sales_col, prod_col, reg_col]
+        if all(col in df.columns for col in required_cols):
+            
+            working_df = df.copy()
+            
+            # 3.1 Type Conversion
+            working_df[date_col] = pd.to_datetime(working_df[date_col], errors='coerce')
+            working_df[prod_col] = working_df[prod_col].astype('category')
+            working_df[reg_col] = working_df[reg_col].astype('category')
+            
+            # 3.2 Logic Correction & Imputation
+            working_df.loc[working_df[sales_col] < 0, sales_col] = np.nan
+            working_df[sales_col] = working_df[sales_col].fillna(
+                working_df.groupby(prod_col, observed=False)[sales_col].transform('mean')
+            )
+            
+            # 3.3 Outlier Handling
+            working_df = working_df[working_df[sales_col] <= 1000]
+            
+            # 4. Feature Engineering
+            working_df['DayOfWeek'] = working_df[date_col].dt.day_name()
+            working_df['Is_Above_Target'] = working_df[sales_col] > 150
+            
+            st.session_state['cleaned_df'] = working_df
+            st.sidebar.success("ทำความสะอาดข้อมูลเสร็จแล้ว!")
+        else:
+            # แจ้งเตือนถ้าชื่อคอลัมน์ในไฟล์ไม่ตรงกับที่โค้ดระบุไว้
+            missing = [c for c in required_cols if c not in df.columns]
+            st.sidebar.error(f"ไม่พบคอลัมน์: {', '.join(missing)} ในไฟล์ที่อัปโหลด")
 
     # --- 3. Main Content: Tabs ---
     tab1, tab2, tab3 = st.tabs(["📋 การตรวจสอบข้อมูล", "📂 สรุปข้อมูลรายกลุ่ม", "📈 กราฟวิเคราะห์"])
