@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -34,12 +33,16 @@ def generate_raw_data():
 def process_and_clean_data(df_raw_input):
     """ประมวลผลและทำความสะอาดข้อมูลคลังสินค้า"""
     df = df_raw_input.copy()
-    
+
     # 1. จัดการคอลัมน์ Last_Restock เป็นรูปแบบวันที่ที่ถูกต้อง
     df['Last_Restock'] = pd.to_datetime(df['Last_Restock'], dayfirst=True)
 
     # 2. จัดการสต๊อกติดลบ
-    df.loc[df['Current_Stock'] < 0, 'Current_Stock'] = 0
+    df.loc[df['Current_Stock'] < 0, 'Current_Stock'] = np.nan
+    # เติมค่าว่างด้วยค่าเฉลี่ยแยกตามสินค้า
+    df['Current_Stock'] = df['Current_Stock'].fillna(
+        df.groupby('Product_Name', observed=False)['Current_Stock'].transform('mean')
+    )
 
     # 3. เติมราคาทุนที่หายไป (ใช้ Unit_Cost เฉลี่ยแยกตามกลุ่มสินค้า)
     df['Unit_Cost'] = df['Unit_Cost'].fillna(
@@ -89,8 +92,8 @@ order_list = order_list.sort_values(by='Product_Name')
 st.dataframe(order_list[['SKU_ID', 'Product_Name', 'Region', 'Current_Stock', 'Min_Requirement', 'Inventory_Value']])
 st.write(f"สรุป: มีสินค้าที่ต้องสั่งซื้อเพิ่มทั้งหมด {len(order_list)} รายการ")
 
-# --- สถานะของสต็อก ---
-st.header('สถานะของสต็อก')
+# --- สถานะสุขภาพของสต็อก ---
+st.header('สถานะสุขภาพของสต็อก')
 fig2, ax2 = plt.subplots(figsize=(8, 5))
 status_counts = df_cleaned['Order_Signal'].value_counts()
 colors = ['#2ecc71' if (x == 'STOCK OK') else '#e74c3c' for x in status_counts.index]
@@ -100,7 +103,6 @@ ax2.set_xlabel('Status', fontsize=12)
 ax2.set_ylabel('Number of SKUs', fontsize=12)
 ax2.set_xticks(range(len(status_counts.index)), status_counts.index, rotation=0)
 st.pyplot(fig2)
-
 
 if st.button("🏠 กลับหน้าหลัก"):
     st.switch_page("app.py")
